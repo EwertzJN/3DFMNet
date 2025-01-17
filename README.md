@@ -95,7 +95,7 @@ As for 3D Dual-Masking Instance Matching Network, we will generate the object pr
 python lib/make_proposals_robi.py
 sh scripts/robiMatch_test.sh
 ```
-We provide our pretrained weights in [robi_ckpts](https://drive.google.com/file/d/110CrsQnGQDzVu5lmFgLhDHWZVhSeTZvA/view?usp=drive_link) and the object proposal we generate in [robi_proposal]()
+We provide our pretrained weights in [robi_ckpts](https://drive.google.com/file/d/110CrsQnGQDzVu5lmFgLhDHWZVhSeTZvA/view?usp=drive_link)
 
 ## Acknowledgements
 Our code refers to [MIRETR](https://github.com/zhiyuanYU134/MIRETR). Many thanks to Yu et al. for a great work.
