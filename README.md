@@ -70,7 +70,7 @@ ROBI/
 |--...
 ```
 
-## Training
+### Training
 For 3D Multi-Object Focusing Network, you can use the following command for training.
 ```
 sh scripts/robiFocus_trainval.sh
@@ -83,7 +83,7 @@ python lib/make_proposals_robi.py
 sh scripts/robiMatch_trainval.sh
 ```
 
-## Testing
+### Testing
 To test the performance of the 3D Multi-Object Focusing Network, you can use the following command as same as Scan2CAD:
 ```
 sh scripts/robiFocus_test.sh
