@@ -25,7 +25,39 @@ pip install -r requirements.txt
 python setup.py build develop
 ```
 
-## Data preparation
+
+## Scan2CAD
+### Data preparation
+You need to pre-download dataset on [ScanNet](https://github.com/ScanNet/ScanNet), [ShapeNet](https://www.shapenet.org/) and [Scan2CAD](https://github.com/skanti/Scan2CAD).
+
+### Training
+Due to the limitaion of device memory, we train the two-stage model separately.
+As for 3D Multi-Object Focusing Network, you can use the following command for training.
+```
+sh scripts/scan2cadFocus_trainval.sh
+```
+  
+After that, you should generate the ground truth center-based neighbord for training and the train the 3D Dual-Masking Instance Matching Network, just as the following:
+```
+python lib/make_proposals_scan2cad.py
+sh scripts/scan2cadMatch_trainval.sh
+```
+
+### Testing
+To test the performance of focusing network, you can use the following command and put the if_proposals to true to generate proposals,
+```
+sh scripts/scan2cadFocus_test.sh
+```
+and we provide the proposals we generate on [scan2cad_proposals](https://drive.google.com/file/d/1pfIfsCiyru7_iDPVVhP_Yn8PoZcViS8p/view?usp=drive_link). The results recall and precision reveal the performance of the focusing network. Noted that it is not the final result! 
+
+Then with the proposals you can test the matching network's performance:
+```
+sh scripts/scan2cadMatch_test.sh
+```
+We release the pretrained weights in [scan2cad_ckpts](https://drive.google.com/file/d/110CrsQnGQDzVu5lmFgLhDHWZVhSeTZvA/view?usp=drive_link).
+
+## ROBI
+### Data preparation
 You need to pre-download dataset on [ROBI](https://www.trailab.utias.utoronto.ca/robi). ROBI data organization will be as follows:
 ```
 ROBI/
@@ -39,35 +71,32 @@ ROBI/
 ```
 
 ## Training
-Due to the limitaion of device memory, we train the two-stage model separately.
-As for 3D Multi-Object Focusing Network, you can use the following command for training.
+For 3D Multi-Object Focusing Network, you can use the following command for training.
 ```
-cd scripts
-sh robiFocus_trainval.sh
+sh scripts/robiFocus_trainval.sh
 ```
 
 After that, we generate the ground truth center-based neighbord for training and the train the 3D Dual-Masking Instance Matching Network, just as the following:
 ```
 cd scripts
-python make_proposals.py
-sh robiMatch_trainval.sh
+python lib/make_proposals_robi.py
+sh scripts/robiMatch_trainval.sh
 ```
 
 ## Testing
-To test the performance of the 3D Multi-Object Focusing Network, you can use the following command:
+To test the performance of the 3D Multi-Object Focusing Network, you can use the following command as same as Scan2CAD:
 ```
-sh robiFocus_test.sh
+sh scripts/robiFocus_test.sh
 ```
-The results recall and precision reveal the performance of the focusing network. Noted that it is not the final result!
+And we also provide the proposals we generate on [robi_proposals](https://drive.google.com/file/d/194kxsWUAzG_TiBG_DSQP1uyMClOzqlFZ/view?usp=drive_link).
 
 As for 3D Dual-Masking Instance Matching Network, we will generate the object proposal and use it for matching.
 ```
-cd scripts
-python make_proposals.py
-sh robiMatch_test.sh
+python lib/make_proposals_robi.py
+sh scripts/robiMatch_test.sh
 ```
-We provide our pretrained weights in [robi_ckpts]() and the object proposal we generate in [robi_proposal]()
+We provide our pretrained weights in [robi_ckpts](https://drive.google.com/file/d/110CrsQnGQDzVu5lmFgLhDHWZVhSeTZvA/view?usp=drive_link) and the object proposal we generate in [robi_proposal]()
 
 ## Acknowledgements
-Our code refers to [MIRETR](https://github.com/zhiyuanYU134/MIRETR). Many thanks to MIRETR for a great work.
+Our code refers to [MIRETR](https://github.com/zhiyuanYU134/MIRETR). Many thanks to Yu et al. for a great work.
 
