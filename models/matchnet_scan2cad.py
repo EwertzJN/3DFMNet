@@ -1,3 +1,9 @@
+'''
+ Copyright (c) 2024 Liyuan Zhang
+ This code is based on Zhiyuan Yu's work on multi-instance point cloud registration
+ Original code can be found at: https://github.com/zhiyuanYU134/MIRETR
+'''
+
 import math
 
 import numpy as np
