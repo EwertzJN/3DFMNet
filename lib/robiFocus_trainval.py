@@ -25,10 +25,10 @@ from models.loss import FocusLoss, Evaluator
 def make_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--steps', metavar='N', type=int, default=10, help='iteration steps for logging')
-    parser.add_argument('--output_dir', type=str, default='/data1/local_userdata/zhangliyuan/log/NIPS24/baseline/robi/detection_exp1')
-    parser.add_argument('--snapshot_dir', type=str, default='/data1/local_userdata/zhangliyuan/log/NIPS24/baseline/robi/detection_exp1/snapshots')
-    parser.add_argument('--logs_dir', type=str, default='/data1/local_userdata/zhangliyuan/log/NIPS24/baseline/robi/detection_exp1/logs')
-    parser.add_argument('--robi_root', type=str, default='/data1/local_userdata/zhangliyuan/dataset/NIPS2024/Robi/')
+    parser.add_argument('--output_dir', type=str, default='./output/robi/detection_exp1')
+    parser.add_argument('--snapshot_dir', type=str, default='./output/robi/detection_exp1/snapshots')
+    parser.add_argument('--logs_dir', type=str, default='./output/robi/detection_exp1/logs')
+    parser.add_argument('--robi_root', type=str, default='./ROBI/')
     return parser
 
 

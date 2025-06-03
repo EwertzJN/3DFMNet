@@ -132,7 +132,7 @@ class CoarseMaskTransformer2(nn.Module):
             )
         ref_feats = self.out_proj(ref_feats)
         src_feats = self.out_proj(src_feats)
-        return ref_feats, src_feats,ref_node_knn_indices,src_node_knn_indices,geo_dist,pred_masks_list,attn_masks_list,mask_attention_score_list
+        return ref_feats, src_feats,ref_node_knn_indices,src_node_knn_indices,geo_dist,pred_masks_list,attn_masks_list,mask_attention_score_list, cross_postion_embedding
 
 
 
