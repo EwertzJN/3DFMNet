@@ -3,10 +3,10 @@ import json
 import os.path as osp
 import random
 
-import cv2
 import numpy as np
 import torch
 import open3d as o3d
+from PIL import Image
 
 from vision3d.datasets.registration.threedmatch_kpconv_v1 import to_o3d_pcd
 from vision3d.utils.point_cloud_utils import random_sample_rotation
@@ -155,34 +155,29 @@ class XYZIBDSENCEDataset(torch.utils.data.Dataset):
         with open(cam_info_path, 'r') as f:
             cam_info = json.load(f)[str(view_id)]
 
-        depth_img = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
         cam_K = np.array(cam_info['cam_K']).reshape(3, 3)
         # from BOP docs (https://github.com/thodan/bop_toolkit/blob/master/docs/bop_datasets_format.md): Multiply the depth image with this factor to get depth in mm
-        depth_scale_mm = 1. / cam_info.get('depth_scale')
-        # convert depth_scale to meters
-        depth_scale = depth_scale_mm * 1000.
-        h, w = depth_img.shape
+        depth_scale = cam_info.get('depth_scale')
 
-        intrinsic = o3d.camera.PinholeCameraIntrinsic(w, h, cam_K[0, 0], cam_K[1, 1], cam_K[0, 2], cam_K[1, 2])
-        pcd0_o3d = o3d.geometry.PointCloud.create_from_depth_image(
-            o3d.geometry.Image(depth_img), intrinsic, depth_scale=depth_scale, depth_trunc=3.0,
-            project_valid_depth_only=True)
-
-        point0_ori = np.asarray(pcd0_o3d.points, dtype=np.float32)
-
-        pcd0_down = pcd0_o3d.voxel_down_sample(voxel_size=self.voxel_size)
-        points0 = np.asarray(pcd0_down.points, dtype=np.float32)
+        depth_raw = o3d.io.read_image(str(depth_path))
+        inter = o3d.camera.PinholeCameraIntrinsic()
+        rgb = np.array(Image.open(depth_path))
+        inter.set_intrinsics(rgb.shape[0], rgb.shape[1], cam_K[0, 0], cam_K[1, 1], cam_K[0, 2], cam_K[1, 2])
+        pcd0 = o3d.geometry.PointCloud.create_from_depth_image( depth_raw, inter,depth_scale=1/depth_scale)
+        points=np.array(pcd0.points).astype(np.float32)/1000
+        point0_ori=points
+        pcd0=to_o3d_pcd(points)
+        pcd0=pcd0.voxel_down_sample(voxel_size=self.voxel_size)
+        points0 =  np.array(pcd0.points).astype(np.float32)
 
         # 3. Load Model Point Cloud (points1)
         model_path = osp.join(self.obj_path, f'obj_{obj_id:06d}.ply')
         pcd1_mesh = o3d.io.read_triangle_mesh(model_path)
-        pcd1_mesh.scale(0.001, center=[0, 0, 0])  # Models are in mm, scale to meters
-
-        pcd1_o3d = pcd1_mesh.sample_points_uniformly(max(20000, self.max_point))
-        point1_ori = np.asarray(pcd1_o3d.points, dtype=np.float32)
-
-        pcd1_down = to_o3d_pcd(point1_ori).voxel_down_sample(voxel_size=self.voxel_size)
-        points1 = np.asarray(pcd1_down.points, dtype=np.float32)
+        points = np.array(pcd1_mesh.vertices).astype(np.float32)/1000   # Models are in mm, scale to meters
+        point1_ori = points
+        pcd1 = to_o3d_pcd(points)
+        pcd1=pcd1.voxel_down_sample(voxel_size=self.voxel_size)
+        points1 =  np.array(pcd1.points).astype(np.float32)
 
         # 4. Load Ground Truth Poses (Rts) and calculate correspondence overlaps
         gt_path = osp.join(scene_path, 'scene_gt.json') if self.partition == 'train_pbr' \
@@ -205,12 +200,13 @@ class XYZIBDSENCEDataset(torch.utils.data.Dataset):
             transform[:3, 3] = t_m2c
             Rts.append(transform)
 
-            corr_indices = get_corr_indices(points0, points1, transform, self.matching_radius)
-            if len(corr_indices) == 0:
-                correspondences.append(0.0)
+            correspondence=get_corr_indices(points0, points1, transform, self.matching_radius)
+            if len(correspondence)==0:
+                correspondences.append(len(correspondence)/model_point_count)
             else:
-                unique_matched_points1 = np.unique(corr_indices[:, 0])
-                correspondences.append(len(unique_matched_points1) / model_point_count)
+                correspondence=torch.from_numpy(correspondence[:,1])
+                correspondence=torch.unique(correspondence)
+                correspondences.append(len(correspondence)/model_point_count)
 
         # 5. Augment data if in training mode
         if self.use_augmentation:
@@ -227,12 +223,12 @@ class XYZIBDSENCEDataset(torch.utils.data.Dataset):
             feats0,
             feats1,
             Rts,
-            torch.from_numpy(np.array(correspondences, dtype=np.float32)),
+            torch.from_numpy(np.array(correspondences)),
             scene_id,
             self.sym[obj_id],
             frame_index,
             point0_ori,
-            point1_ori
+            points1
         )
 
 
