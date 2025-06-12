@@ -3,6 +3,7 @@ from IPython import embed
 import numpy as np
 import open3d as o3d
 
+from utils.xyzibd_dataset import XYZIBDSENCEDataset, Process_XYZIBDSENCEDataset
 from vision3d.datasets.registration.threedmatch_kpconv_v1 import ThreeDMatchPairKPConvDataset,get_dataloader,ROBISENCEDataset, Process_ROBISENCEDataset, Process_Scan2cadKPConvDataset,Scan2cadKPConvDataset
 from vision3d.utils.point_cloud_utils import pairwise_distance
 from vision3d.utils.open3d_utils import make_open3d_colors, make_open3d_point_cloud
@@ -173,6 +174,88 @@ def Process_ROBI_test_data_loader(engine, config):
                                                             sampler=test_sampler,
                                                             neighborhood_limits=None,
                                                             drop_last=True)
+
+    return test_data_loader, neighborhood_limits
+
+def XYZIBD_train_data_loader(engine, config):
+    train_dataset = XYZIBDSENCEDataset(config.voxel_size, config.xyzibd_root, 'train', config.matching_radius,
+                                     max_point=config.train_max_num_point,
+                                     use_augmentation=config.train_use_augmentation,
+                                     augmentation_noise=config.train_augmentation_noise,
+                                     rotation_factor=config.train_rotation_factor)
+    train_sampler = torch.utils.data.DistributedSampler(train_dataset) if engine.distributed else None
+    train_data_loader, neighborhood_limits = get_dataloader(train_dataset, config,
+                                                            config.train_batch_size,
+                                                            config.train_num_worker,
+                                                            shuffle=False,
+                                                            sampler=train_sampler,
+                                                            neighborhood_limits=None,
+                                                            drop_last=True)
+    valid_dataset = XYZIBDSENCEDataset(config.voxel_size, config.xyzibd_root, 'val', config.matching_radius,
+                                     max_point=config.train_max_num_point,
+                                     use_augmentation=False,
+                                     augmentation_noise=config.train_augmentation_noise,
+                                     rotation_factor=config.train_rotation_factor)
+
+    valid_sampler = torch.utils.data.DistributedSampler(valid_dataset) if engine.distributed else None
+    valid_data_loader, _ = get_dataloader(valid_dataset, config, config.test_batch_size, config.test_num_worker,
+                                          shuffle=False,
+                                          sampler=valid_sampler,
+                                          neighborhood_limits=neighborhood_limits,
+                                          drop_last=False)
+
+    return train_data_loader, valid_data_loader, neighborhood_limits
+
+
+def Process_XYZIBD_train_data_loader(engine, config):
+    train_dataset = Process_XYZIBDSENCEDataset(config.process_xyzibd_root, config.voxel_size, 'train',
+                                             max_point=config.train_max_num_point,
+                                             use_augmentation=config.train_use_augmentation,
+                                             augmentation_noise=config.train_augmentation_noise,
+                                             rotation_factor=config.train_rotation_factor)
+    train_sampler = torch.utils.data.DistributedSampler(train_dataset) if engine.distributed else None
+    train_data_loader, neighborhood_limits = get_dataloader(train_dataset, config,
+                                                            config.train_batch_size,
+                                                            config.train_num_worker,
+                                                            # shuffle=True,
+                                                            sampler=train_sampler,
+                                                            neighborhood_limits=None,
+                                                            drop_last=True)
+
+    return train_data_loader, neighborhood_limits
+
+
+def XYZIBD_test_data_loader(engine, config):
+    test_dataset = XYZIBDSENCEDataset(config.voxel_size, config.xyzibd_root, 'test', config.matching_radius,
+                                    max_point=config.train_max_num_point,
+                                    use_augmentation=config.train_use_augmentation,
+                                    augmentation_noise=config.train_augmentation_noise,
+                                    rotation_factor=config.train_rotation_factor)
+    train_sampler = torch.utils.data.DistributedSampler(test_dataset) if engine.distributed else None
+    test_data_loader, neighborhood_limits = get_dataloader(test_dataset, config,
+                                                           config.train_batch_size,
+                                                           config.train_num_worker,
+                                                           shuffle=False,
+                                                           sampler=train_sampler,
+                                                           neighborhood_limits=None,
+                                                           drop_last=True)
+    return test_data_loader, neighborhood_limits
+
+
+def Process_XYZIBD_test_data_loader(engine, config):
+    test_dataset = Process_XYZIBDSENCEDataset(config.process_xyzibd_root, config.voxel_size, 'test',
+                                            max_point=config.train_max_num_point,
+                                            use_augmentation=config.train_use_augmentation,
+                                            augmentation_noise=config.train_augmentation_noise,
+                                            rotation_factor=config.train_rotation_factor)
+    test_sampler = torch.utils.data.DistributedSampler(test_dataset) if engine.distributed else None
+    test_data_loader, neighborhood_limits = get_dataloader(test_dataset, config,
+                                                           config.train_batch_size,
+                                                           config.train_num_worker,
+                                                           # shuffle=True,
+                                                           sampler=test_sampler,
+                                                           neighborhood_limits=None,
+                                                           drop_last=True)
 
     return test_data_loader, neighborhood_limits
 
